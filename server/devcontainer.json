@@ -1,0 +1,19 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+	"name": "Node.js & TypeScript",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"features": {
+		"ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
+		"ghcr.io/devcontainers-extra/features/nestjs-cli:2": {},
+		"ghcr.io/devcontainers-extra/features/prettier:1": {}
+	},
+	"appPort": [
+		"3200:3000",
+		"3201:5173"
+	],
+	"mounts": [
+		{ "type": "bind", "source": "D:/Docker/Binds/Videos", "target": "/videos"}
+	]
+}
