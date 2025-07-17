@@ -1,0 +1,19 @@
+{
+  "name": "ripcord",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r --parallel build",
+    "build:release": "pnpm -r build:release && npm run copy-env",
+    "copy-env": "copy .env .\\dist\\",
+    "format": "pnpm -r --parallel format",
+    "lint": "pnpm -r --parallel lint",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1"
+}

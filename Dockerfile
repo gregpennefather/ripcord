@@ -8,4 +8,4 @@ COPY ./dist ./
 
 EXPOSE 3200:3000
 
-CMD node index.js
+CMD node server/index.js

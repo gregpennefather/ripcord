@@ -1,6 +1,6 @@
 Build:
-> .\build-prod.sh
+> npm run build:release
 > docker build -t ripcord .
 
 Run
-> docker run --mount type=bind,src=<SRC>,dst=/videos --rm -p 3200:3000 ripcord
+> docker run --name ripcord --mount type=bind,src=local/folder/path,dst=/videos --rm -p 3200:3000 ripcord
