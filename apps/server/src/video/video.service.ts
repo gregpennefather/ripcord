@@ -1,68 +1,75 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   StreamableFile,
 } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import { join } from 'path';
-import { VideoDAL } from './videoDAL';
-import { VideoFile as VideoFileInfo } from './video';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from 'src/env';
-
-// const VIDEOS_PATH = "/videos"
+import { DataService } from 'src/data/data.service';
+import { map, Observable } from 'rxjs';
+import { Video } from 'src/data/video.model';
 
 @Injectable()
 export class VideosService {
   private videosPath;
 
   constructor(
-    private dal: VideoDAL,
+    private dataService: DataService,
     config: ConfigService,
   ) {
     this.videosPath = config.get<EnvConfig>('VIDEOS_PATH');
   }
 
-  public async getVideoStream(
-    videoInfo: VideoFileInfo,
+  public getVideoStream(
+    videoUUID: string,
     range: string = 'bytes=0-',
-  ): Promise<{
+  ): Observable<{
     streamableFile: StreamableFile;
     contentStart: number | undefined;
     contentEnd: number | undefined;
     fileSize: number;
     mimeType: string;
   }> {
-    const filePath = join(this.videosPath, videoInfo.fileName);
+    return this.dataService.findVideo({ uuid: videoUUID }).pipe(
+      map(video => {
+        if (!video) throw new NotFoundException(`Could not find video ${videoUUID}`);
 
-    let start: number | undefined;
-    let end: number | undefined;
+        const filePath = join(this.videosPath, video.fileName);
 
-    if (range != 'bytes=0-') {
-      const obj = parseRange(range, videoInfo.fileSize);
-      start = obj.start;
-      end = obj.end;
-    }
+        let start: number | undefined;
+        let end: number | undefined;
 
-    const stream = createReadStream(filePath, { start, end });
-    return {
-      streamableFile: new StreamableFile(stream, {
-        disposition: `inline; filename="${videoInfo.fileName}"`,
-        type: videoInfo.mimeType,
-      }),
-      contentStart: start,
-      contentEnd: end,
-      fileSize: videoInfo.fileSize,
-      mimeType: videoInfo.mimeType,
-    };
+        if (range != 'bytes=0-') {
+          const obj = parseRange(range, video.fileSize);
+          start = obj.start;
+          end = obj.end;
+        }
+
+        const stream = createReadStream(filePath, { start, end });
+        return {
+          streamableFile: new StreamableFile(stream, {
+            disposition: `inline; filename="${video.fileName}"`,
+            type: video.mimeType,
+          }),
+          contentStart: start,
+          contentEnd: end,
+          fileSize: video.fileSize,
+          mimeType: video.mimeType,
+        };
+      })
+    )
+
   }
 
-  public async fileList(): Promise<VideoFileInfo[]> {
-    return this.dal.getList();
+  public fileList(): Observable<Video[]> {
+    return this.dataService.videos();
   }
 
-  async getInfo(uuid: string): Promise<VideoFileInfo | undefined> {
-    return this.dal.info(uuid);
+  public getInfo(uuid: string): Observable<Video | null> {
+    return this.dataService.findVideo({uuid});
   }
 }
 

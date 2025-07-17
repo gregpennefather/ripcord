@@ -33,4 +33,4 @@ coverage
 .devcontainer/
 
 # ripcord.db
-**/ripcord.db
+**/**/ripcord.db

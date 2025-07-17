@@ -6,6 +6,7 @@ import { EnvConfig } from 'src/env';
 import { getFileList } from 'src/common/fs';
 import { basename, extname, join } from 'path';
 import { copyFile, existsSync, readFile, writeFile } from 'fs';
+import { concatAll, forkJoin, from, map, Observable, of, switchMap, zip } from 'rxjs';
 
 interface BLE {
   full: string;
@@ -29,51 +30,61 @@ export class SubtitleDataService {
     );
   }
 
-  public async getVideoSubtitles(video: Video): Promise<string[]> {
-    const storageFiles = await getFileListSplit(
+  public getVideoSubtitles(video: Video): Observable<string[]> {
+    const storageFiles = from(getFileListSplit(
       this.appStoragePath,
       video.uuid,
-    );
-    const videosFolderFiles = await getFileListSplit(
+    ));
+    const videosFolderFiles = from(getFileListSplit(
       this.videosPath,
       video.baseName,
-    );
-    await this.migrateSubtitlesToStorage(
-      storageFiles,
-      videosFolderFiles,
-      video.uuid,
-    );
+    ));
 
-    const langs = (await getFileListSplit(this.appStoragePath, video.uuid))
-      .filter(({ ext }) => ext === '.vtt')
-      .map(({ lang }) => lang);
-    return langs;
+    return forkJoin({ storageFiles, videosFolderFiles })
+      .pipe(
+        switchMap(({ storageFiles, videosFolderFiles }) => this.migrateSubtitlesToStorage(storageFiles, videosFolderFiles, video.uuid)));
   }
 
-  private async migrateSubtitlesToStorage(
+  private migrateSubtitlesToStorage(
     storageFiles: BLE[],
     videoFiles: BLE[],
     videoFileUUID: string,
-  ) {
-    for (const videoFile of videoFiles) {
-      if (storageFiles.findIndex(({ lang }) => lang == videoFile.lang) === -1) {
-        if (videoFile.ext == '.vtt') {
-          await copyVttFile(
-            join(this.videosPath, videoFile.full),
-            join(
-              this.appStoragePath,
-              `${videoFileUUID}.${videoFile.lang}${videoFile.ext}`,
-            ),
-          );
-        } else if (videoFile.ext == '.srt') {
-          // SRT file does not have a storage VTT file so convert
-          await this.convertToVttFile(
-            videoFile.full,
-            videoFile.lang,
-            videoFileUUID,
-          );
+  ): Observable<string[]> {
+    let files = videoFiles.filter(vf => {
+      if (vf.ext == '.vtt') { // If file is .vtt
+        return storageFiles.findIndex(sf => sf.full == vf.full) === -1; // check that it doesnt already exist
+      } else if (vf.ext == '.srt') { // If file is .srt
+        let p = `${videoFileUUID}.${vf.lang}.vtt`;
+        if (videoFiles.findIndex(evf => evf.full == p) === -1) { // check if .vtt also exists in videos folder
+          return storageFiles.findIndex(sf => sf.full == p) === -1; // if not, check there isn't a converted .vtt in storage
+        } else {
+          return false; // if .vtt exists in video folder skip .srt conversion
         }
       }
+      return false;
+    }).map(videoFile => {
+      if (videoFile.ext == '.vtt') {
+        return from(copyVttFile(
+          join(this.videosPath, videoFile.full),
+          join(
+            this.appStoragePath,
+            `${videoFileUUID}.${videoFile.lang}${videoFile.ext}`,
+          ),
+        )).pipe(map(() => videoFile.lang))
+      } else {
+        // SRT file does not have a storage VTT file so convert
+        return from(this.convertToVttFile(
+          videoFile.full,
+          videoFile.lang,
+          videoFileUUID,
+        ))
+      }
+    });
+
+    if (files.length == 0) {
+      return of([]);
+    } else {
+      return zip(files);
     }
   }
 

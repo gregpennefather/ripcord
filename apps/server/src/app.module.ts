@@ -7,12 +7,12 @@ import { join } from 'path';
 import { VideosService } from './video/video.service';
 import { SubtitlesController } from './subtitles/subtitles.controller';
 import { SubtitlesService } from './subtitles/subtitles.service';
-import { VideoDAL } from './video/videoDAL';
 import { ConfigModule } from '@nestjs/config';
-import { ThumbnailsController } from './thumbnails/thumbnails.controller';
 import { DataService } from './data/data.service';
 import { VideoCrawlerService } from './data/video-data.service';
 import { SubtitleDataService } from './data/subtitle-data.service';
+import { ThumbnailGenerationService } from './data/thumbnail-generation.service';
+import { ThumbnailController } from './thumbnail/thumbnail.controller';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { SubtitleDataService } from './data/subtitle-data.service';
     AppController,
     VideosController,
     SubtitlesController,
-    ThumbnailsController,
+    ThumbnailController,
   ],
   providers: [
     AppService,
@@ -38,7 +38,7 @@ import { SubtitleDataService } from './data/subtitle-data.service';
     VideoCrawlerService,
     SubtitleDataService,
     DataService,
-    VideoDAL,
+    ThumbnailGenerationService,
   ],
 })
 export class AppModule {}

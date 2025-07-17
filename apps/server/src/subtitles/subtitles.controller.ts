@@ -1,24 +1,30 @@
 import { Controller, Get, Param, Res, StreamableFile } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createReadStream } from 'fs';
+import { join } from 'path';
+import { EnvConfig } from 'src/env';
 import { VideosService } from 'src/video/video.service';
 
 @Controller('api/subtitles')
 export class SubtitlesController {
-  constructor(private videosService: VideosService) {}
-
-  @Get('/:uuid/:lang')
-  async getFile(
-    @Param() params: { uuid: string; lang: string },
-  ): Promise<StreamableFile> {
-    const videoInfo = await this.videosService.getInfo(params.uuid);
-    const subtitleFile = videoInfo!.subtitles.find(
-      (f) => f.lang == params.lang,
+  storagePath: string;
+  constructor(
+    configService: ConfigService) {
+    this.storagePath = configService.getOrThrow<string>(
+      EnvConfig.storagePath,
     );
-    const readStream = createReadStream(subtitleFile!.path);
+  }
+  @Get('/:uuid/:lang')
+  getFile(
+    @Param() params: { uuid: string; lang: string }
+  ): StreamableFile {
+    let path = join(this.storagePath, `${params.uuid}.${params.lang}.vtt`);
+    const readStream = createReadStream(path);
 
     const streamableFile = new StreamableFile(readStream, {
       type: 'text/vtt',
     });
+
     return streamableFile;
   }
 }

@@ -4,63 +4,55 @@ import {
   Header,
   Param,
   Res,
-  StreamableFile,
   Headers,
-  NotFoundException,
 } from '@nestjs/common';
 import { getContentRange } from 'src/common/content';
 import { VideosService } from './video.service';
+import { Video } from 'src/data/video.model';
 
 @Controller('api/video')
 export class VideosController {
-  constructor(private videoService: VideosService) {}
+  constructor(private videoService: VideosService) { }
 
   @Get('/list')
-  async getList() {
-    const fileList = await this.videoService.fileList();
+  getList(
+    @Res({ passthrough: true }) response) {
 
-    return fileList;
+    this.videoService.fileList().subscribe((videos: Video[]) => {
+      response.json(videos);
+    })
   }
 
   @Get('/i/:uuid')
-  async getInfo(
+  getInfo(
     @Param() params: { uuid: string },
     @Res({ passthrough: true }) response,
   ) {
-    const info = await this.videoService.getInfo(params.uuid);
-    if (info === undefined) {
-      response.status(404);
-    } else {
-      return info;
-    }
+    this.videoService.getInfo(params.uuid).subscribe(video => {
+      response.json(video);
+    })
   }
 
   @Get('/v/:uuid')
   @Header('Accept-Ranges', 'bytes')
-  async getFile(
+  getFile(
     @Param() params: { uuid: string },
     @Headers('range') range: string,
     @Res({ passthrough: true }) response,
-  ): Promise<StreamableFile> {
-    const videoInfo = await this.videoService.getInfo(params.uuid);
-    if (!videoInfo) {
-      throw new NotFoundException();
-    }
-
-    const { streamableFile, contentStart, contentEnd, fileSize, mimeType } =
-      await this.videoService.getVideoStream(videoInfo, range);
-
-    response.set({
-      'Content-Type': mimeType,
-    });
-
-    if (contentStart != undefined && contentEnd != undefined) {
-      response.status(206);
+  ): void {
+    this.videoService.getVideoStream(params.uuid, range).subscribe(({ streamableFile, contentStart, contentEnd, fileSize, mimeType }) => {
       response.set({
-        'Content-Range': getContentRange(contentStart, contentEnd, fileSize),
+        'Content-Type': mimeType,
       });
-    }
 
-    return streamableFile;
+      if (contentStart != undefined && contentEnd != undefined) {
+        response.status(206);
+        response.set({
+          'Content-Range': getContentRange(contentStart, contentEnd, fileSize),
+        });
+      }
+
+      response.data(streamableFile);
+    })
   }
 }
