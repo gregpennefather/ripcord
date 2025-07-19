@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   StreamableFile,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { Video } from 'src/data/video.model';
 
 @Injectable()
 export class VideosService {
+  private readonly logger = new Logger(VideosService.name);
   private videosPath;
 
   constructor(
@@ -34,8 +36,9 @@ export class VideosService {
     mimeType: string;
   }> {
     return this.dataService.findVideo({ uuid: videoUUID }).pipe(
-      map(video => {
-        if (!video) throw new NotFoundException(`Could not find video ${videoUUID}`);
+      map((video) => {
+        if (!video)
+          throw new NotFoundException(`Could not find video ${videoUUID}`);
 
         const filePath = join(this.videosPath, video.fileName);
 
@@ -59,9 +62,8 @@ export class VideosService {
           fileSize: video.fileSize,
           mimeType: video.mimeType,
         };
-      })
-    )
-
+      }),
+    );
   }
 
   public fileList(): Observable<Video[]> {
@@ -69,7 +71,7 @@ export class VideosService {
   }
 
   public getInfo(uuid: string): Observable<Video | null> {
-    return this.dataService.findVideo({uuid});
+    return this.dataService.findVideo({ uuid });
   }
 }
 

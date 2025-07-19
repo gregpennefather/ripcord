@@ -1,16 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { Video } from './video.model';
 import * as Loki from 'lokijs';
-import { map, Observable, ReplaySubject, take, tap } from 'rxjs';
+import { map, Observable, ReplaySubject, take } from 'rxjs';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from 'src/env';
+import { join } from 'path';
 
 @Injectable()
 export class DataService {
   videosCollection$: ReplaySubject<Collection<Video>> = new ReplaySubject();
   db: Loki;
   videosCollection: Collection<Video>;
-  constructor() {
+  constructor(configService: ConfigService) {
+    let path = join(
+      configService.getOrThrow(EnvConfig.storagePath),
+      'ripcord.db',
+    );
     const adapter = new Loki.LokiFsAdapter();
-    this.db = new Loki('ripcord.db', {
+    this.db = new Loki(path, {
       adapter,
       autoload: true,
       autoloadCallback: () => this.databaseInit(),
@@ -20,11 +27,15 @@ export class DataService {
   }
 
   videos(): Observable<Video[]> {
-    return this.videosCollection$.asObservable().pipe(map(collection => collection.find()));
+    return this.videosCollection$
+      .asObservable()
+      .pipe(map((collection) => collection.find()));
   }
 
-  findVideo(options: { fileName?: string, uuid?: string }): Observable<Video | null> {
-
+  findVideo(options: {
+    fileName?: string;
+    uuid?: string;
+  }): Observable<Video | null> {
     return this.videosCollection$.pipe(
       take(1),
       map((c) => c.findOne(options)),

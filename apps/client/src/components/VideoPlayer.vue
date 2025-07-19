@@ -7,32 +7,39 @@ const props = defineProps<{
 }>()
 
 const apiUrl = `${window.origin}/api`
-console.log('videoplayer')
 
-const videoUUID = props.info.uuid
-const videoUrl = ref(`${apiUrl}/videos/v/${videoUUID}`)
-const mimeType = props.info.mimeType
-const video = useTemplateRef('video')
-const tracks = ref()
+const videoUrl = ref(`${apiUrl}/video/v/${props.info.uuid}`)
+const video$ = useTemplateRef('video')
 
 onMounted(() => {
-  console.log('mounted')
-  console.log(video.value)
-  tracks.value = video.value?.textTracks ?? []
+  for (const track of video$.value?.textTracks ?? []) {
+    if (track.language == 'en') {
+      track.mode = 'showing'
+    }
+  }
 })
 </script>
 
 <template>
-  <video id="video" ref="video" controls autoplay :src="videoUrl" preload="metadata">
-    <source :src="videoUrl" :type="mimeType" />
+  <a :href="videoUrl"
+    ><h1>{{ props.info.friendlyName }}</h1></a
+  >
+  <video
+    id="video"
+    ref="video"
+    :poster="`${apiUrl}/thumbnail/${props.info.uuid}.png`"
+    controls
+    autoplay
+    preload="metadata"
+    class="aspect-video w-full"
+  >
+    <source :src="videoUrl" :type="props.info.mimeType" />
     <track
-      v-for="subtitle in props.info.subtitles"
-      v-bind:key="subtitle.lang"
+      v-for="subtitleLang in props.info.subtitles"
+      v-bind:key="subtitleLang"
       kind="subtitles"
-      :srclang="subtitle.lang"
-      :src="`${apiUrl}/subtitles/${videoUUID}/${subtitle.lang}`"
-      default
+      :srclang="subtitleLang"
+      :src="`${apiUrl}/subtitles/${props.info.uuid}/${subtitleLang}`"
     />
   </video>
-  <!-- <video playsinline controls src="{{videoUrl}}" id="video-stream" width="100%"></video> -->
 </template>

@@ -1,7 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import VideoList from '@/components/VideoList.vue'
+</script>
 
 <template>
-  <main>
-    <p>Welcome. Okay cool sick.</p>
+  <main class="w-full min-w-full">
+    <VideoList />
   </main>
 </template>

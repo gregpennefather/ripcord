@@ -18,7 +18,7 @@ import { ThumbnailController } from './thumbnail/thumbnail.controller';
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),
-      exclude: ['/api/{*test}'],
+      exclude: ['/api/{*test}', '/assets/{*test}'],
       serveStaticOptions: {
         fallthrough: true,
       },

@@ -14,10 +14,14 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@primeuix/themes": "^1.2.1",
+    "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
     "@types/axios": "^0.9.36",
+    "autoprefixer": "^10.4.21",
     "axios": "^1.10.0",
-    "reka-ui": "^2.3.2",
+    "postcss": "^8.5.6",
+    "primevue": "^4.3.6",
     "tailwindcss": "^4.1.11",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1"

@@ -34,3 +34,4 @@ coverage
 
 # ripcord.db
 **/**/ripcord.db
+/dev

@@ -6,7 +6,7 @@ export interface VideoFileInfo {
   mimeType: string
   fileSize: number
   tags: string[]
-  subtitles: SubtitleFile[]
+  subtitles: string[]
 }
 
 export interface SubtitleFile {
